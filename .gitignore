@@ -1,0 +1,63 @@
+# --- Python & Entornos Virtuales ---
+venv/
+.venv/
+env/
+bin/
+lib/
+include/
+*.py[cod]
+*$py.class
+__pycache__/
+
+# --- Django ---
+db.sqlite3
+db.sqlite4
+static/
+media/
+staticfiles/
+.webassets-cache
+
+# --- Variables de Entorno (¡CRÍTICO!) ---
+.env
+.env.example
+.env.local
+.env.*.local
+
+# --- Bases de Datos y Series Temporales ---
+*.db
+*.sql
+*.sqlite
+/prometheus/data/
+/grafana/data/
+/redis/data/
+/postgres/data/
+
+# --- Logs y Reportes ---
+*.log
+logs/
+reports/*.pdf
+reports/*.xlsx
+reports/*.csv
+/docs/_build/
+
+# --- Docker & Infraestructura ---
+.docker/
+docker-compose.override.yml
+*.tar
+*.tar.gz
+
+# --- Frontend (Node/React/Vue) ---
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.eslintcache
+.stylelintcache
+
+# --- Herramientas de Sistema y Editores ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*.tmp
