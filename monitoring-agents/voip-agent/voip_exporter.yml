@@ -1,0 +1,8 @@
+# Minimal VoIP exporter mapping (expects exporter exposing voip_* metrics)
+metrics:
+  - name: voip_mos_score
+  - name: voip_jitter_ms
+  - name: voip_latency_ms
+scrape:
+  listen: 9700
+  path: /metrics

@@ -1,0 +1,16 @@
+modules:
+  if_mib:
+    walk:
+      - 1.3.6.1.2.1.2   # IF-MIB
+    version: 2
+  snmp_v3:
+    walk:
+      - 1.3.6.1.2.1.1   # system
+      - 1.3.6.1.2.1.2   # interfaces
+    auth:
+      username: "{{SNMP_USER}}"
+      auth_protocol: SHA
+      auth_password: "{{SNMP_AUTH_PASS}}"
+      priv_protocol: AES
+      priv_password: "{{SNMP_PRIV_PASS}}"
+    version: 3

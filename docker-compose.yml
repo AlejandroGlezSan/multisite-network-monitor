@@ -1,22 +1,24 @@
 version: '3.8'
 
 services:
-  # Base de datos principal
   postgres:
     image: timescale/timescaledb:latest-pg14
     environment:
       POSTGRES_DB: network_monitor
       POSTGRES_USER: monitor
-      POSTGRES_PASSWORD: secure_password
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U monitor"]
+      interval: 30s
+      retries: 5
+    restart: unless-stopped
 
-  # Backend Django
   backend:
     build: ./backend
-    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./backend:/app
     ports:
@@ -24,22 +26,30 @@ services:
     depends_on:
       - postgres
     environment:
-      DATABASE_URL: postgres://monitor:secure_password@postgres:5432/network_monitor
+      POSTGRES_DB: network_monitor
+      POSTGRES_USER: monitor
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_HOST: postgres
+    restart: unless-stopped
 
-  # Prometheus para métricas
   prometheus:
     image: prom/prometheus:latest
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
+      - ./prometheus/alert_rules:/etc/prometheus/alert_rules
     ports:
       - "9090:9090"
+    depends_on:
+      - node_exporter
+      - postgres_exporter
+      - snmp-agent
+    restart: unless-stopped
 
-  # Grafana para dashboards
   grafana:
     image: grafana/grafana:latest
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: "${GF_SECURITY_ADMIN_PASSWORD}"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
@@ -47,12 +57,59 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
+    restart: unless-stopped
 
-  # Redis para cache y Celery
   redis:
     image: redis:alpine
     ports:
       - "6379:6379"
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      DATA_SOURCE_NAME: "postgresql://monitor:${POSTGRES_PASSWORD}@postgres:5432/network_monitor?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  snmp-agent:
+    build: ./monitoring-agents/snmp-agent
+    ports:
+      - "9116:9116"
+    environment:
+      SNMP_USER: "${SNMP_USER}"
+      SNMP_AUTH_PASS: "${SNMP_AUTH_PASS}"
+      SNMP_PRIV_PASS: "${SNMP_PRIV_PASS}"
+    restart: unless-stopped
+
+  netflow-agent:
+    build: ./monitoring-agents/netflow-agent
+    ports:
+      - "9600:9600"
+    restart: unless-stopped
+
+  voip-agent:
+    build: ./monitoring-agents/voip-agent
+    ports:
+      - "9700:9700"
+    restart: unless-stopped
 
 volumes:
   postgres_data:

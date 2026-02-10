@@ -1,0 +1,29 @@
+groups:
+  - name: core-alerts
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "No metrics scraped from {{ $labels.instance }} for >2m."
+
+      - alert: HighCPU
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.instance }}"
+          description: "CPU usage >80% for 5 minutes."
+
+      - alert: VoIPQualityDegraded
+        expr: voip_mos_score < 3.5 or voip_jitter_ms > 30 or voip_latency_ms > 200
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "VoIP quality degraded on {{ $labels.instance }}"
+          description: "MOS <3.5 or jitter/latency above thresholds."
